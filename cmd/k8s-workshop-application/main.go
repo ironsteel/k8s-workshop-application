@@ -13,6 +13,7 @@ import (
 
 func hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, http.StatusText(http.StatusOK))
+	log.Println("Hello handler was called")
 }
 
 func main() {
@@ -34,11 +35,17 @@ func main() {
 	router.HandleFunc("/healthz", hello)
 
 	go func() {
-		if err := http.ListenAndServe(":"+diagPort, diagnostics.New()); err != nil {
+		log.Print("Diagnostics server is praparing...")
+		server := &http.Server{
+			Addr:    ":" + diagPort,
+			Handler: diagnostics.New(),
+		}
+		if err := server.ListenAndServe(); err != nil {
 			log.Fatal(err)
 		}
 	}()
 
+	log.Print("Application server is praparing...")
 	if err := http.ListenAndServe(":"+port, router); err != nil {
 		log.Fatal(err)
 	}
